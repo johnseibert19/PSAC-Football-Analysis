@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YOLO Video Annotation</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f4f4f4;
+        }
+        form {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        label, input, button {
+            display: block;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Upload Video for YOLO Annotation</h1>
+    <form action="/detect" method="POST" enctype="multipart/form-data">
+        <label for="video">Choose a video:</label>
+        <input type="file" name="video" id="video" accept="video/mp4, video/x-m4v, video/*" required>
+        <br><br>
+        <button type="submit">Upload and Annotate</button>
+    </form>
+</body>
+</html>
