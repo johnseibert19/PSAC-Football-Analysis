@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useState } from "react";
 import Link from "next/link";
 
@@ -23,7 +22,7 @@ export default function Home() {
     }
   };
 
-  const [isUploading, setIsUploading] = useState(false);
+  const [, setIsUploading] = useState(false);
 
 const handleUpload = async () => {
   if (!file) {

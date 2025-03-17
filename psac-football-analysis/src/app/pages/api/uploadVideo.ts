@@ -2,6 +2,8 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import Error from 'next/error';
+import { ValidationError } from 'next/dist/compiled/amphtml-validator';
 
 // Set up multer storage
 const storage = multer.diskStorage({
@@ -17,9 +19,9 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 // Create a middleware function to run multer
-const runMiddleware = (req: NextApiRequest, res: NextApiResponse, fn: any) => {
+const runMiddleware = (req: NextApiRequest, res: NextApiResponse, fn: any) => { //eslint-disable-line
   return new Promise((resolve, reject) => {
-    fn(req, res, (result: any) => {
+    fn(req, res, (result: unknown) => {
       if (result instanceof Error) {
         return reject(result);
       }
@@ -48,13 +50,15 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
           const newFilePath = path.join('./uploads', `${originalFileName}_annotated${path.extname(outputPath)}`);
           fs.renameSync(outputPath, newFilePath); // Rename annotated
           res.status(200).json({ message: 'Video processed successfully', videoUrl: newFilePath });
-      } catch (replaceError: any) {
+      } catch (replaceError: unknown) {
           // If replacement fails, send the annotated video's original path.
-          res.status(200).json({ message: 'Video processed, but replacement failed.', videoUrl: outputPath });
+          const knownError = replaceError as ValidationError
+          res.status(200).json({ message: 'Video processed, but replacement failed.', videoUrl: outputPath, error: knownError.message });
       }
 
-    } catch (error: any) {
-      res.status(500).json({ message: 'Error processing video', error: error.message });
+    } catch (error: unknown) {
+      const knownError = error as ValidationError
+      res.status(500).json({ message: 'Error processing video', error: knownError.message });
     }
   } else {
     res.status(405).json({ message: 'Method Not Allowed' });
