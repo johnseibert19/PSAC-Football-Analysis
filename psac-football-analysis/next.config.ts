@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
   //output: 'export',
   distDir: 'dist',
   trailingSlash: true,
-  assetPrefix: '.'
+  assetPrefix: process.env.ELECTRON === 'true' ? './' : '/',
 };
 
 export default nextConfig;
