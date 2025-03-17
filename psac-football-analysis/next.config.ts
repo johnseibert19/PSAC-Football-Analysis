@@ -3,7 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   //output: 'export',
-  distDir: 'dist',
+  //distDir: 'dist',
   trailingSlash: true,
   assetPrefix: process.env.ELECTRON === 'true' ? './' : '/',
 };
