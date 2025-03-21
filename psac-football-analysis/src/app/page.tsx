@@ -38,7 +38,7 @@ export default function Home() {
     console.log("FormData:", formData);
 
     try {
-      const response = await fetch("/api/uploadVideo", { // Removed trailing slash
+      const response = await fetch("/api/uploadVideo", {
         method: "POST",
         body: formData,
       });
@@ -82,7 +82,7 @@ export default function Home() {
       >
         <div className="flex items-center">
           <div className="w-10 h-10 bg-blue-500 rounded-full mr-4">
-            {/* Replace with your logo */}
+            {/* Replace with logo */}
           </div>
           <span className="text-lg font-semibold">PSAC Football Analysis</span>
         </div>
@@ -154,12 +154,18 @@ export default function Home() {
         {uploadError && <p className="text-red-500">{uploadError}</p>}
 
         {file && (
-          <button
-            onClick={handleUpload}
-            className="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg"
-          >
-            Analyze Video
-          </button>
+          <div className="text-center">
+            <button
+              onClick={handleUpload}
+              className={`bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg ${
+                isUploading ? "opacity-50 cursor-not-allowed" : ""
+              }`}
+              disabled={isUploading}
+            >
+              {isUploading ? "Analyzing..." : "Analyze Video"}
+            </button>
+            {isUploading && <p className="mt-2">Uploading video...</p>}
+          </div>
         )}
       </main>
 

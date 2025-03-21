@@ -11,10 +11,9 @@ const Contact: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Add your logic here to send the contact information to your server
+    // logic here to send the contact information to the server
     console.log("Submitting contact information:", { name, email, message });
 
-    // Example using fetch (replace with your actual API endpoint):
     /*
     try {
       const response = await fetch("/api/contact", {
