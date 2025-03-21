@@ -6,7 +6,9 @@ import Link from "next/link";
 export default function Home() {
   const [file, setFile] = useState<File | null>(null);
   const [videoPreviewUrl, setVideoPreviewUrl] = useState<string | null>(null);
-  const [darkMode, setDarkMode] = useState(true); // State for toggling dark mode
+  const [darkMode, setDarkMode] = useState(true);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -22,37 +24,49 @@ export default function Home() {
     }
   };
 
-  const [, setIsUploading] = useState(false);
-
-const handleUpload = async () => {
-  if (!file) {
-    console.error("No file selected.");
-    return;
-  }
-
-  setIsUploading(true);
-  const formData = new FormData();
-  formData.append("video", file);
-
-  try {
-    const response = await fetch("/api/uploadVideo", {
-      method: "POST",
-      body: formData,
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      setVideoPreviewUrl(data.videoUrl);
-    } else {
-      console.error("Video upload failed.");
+  const handleUpload = async () => {
+    if (!file) {
+      console.error("No file selected.");
+      return;
     }
-  } catch (error) {
-    console.error("Error uploading video:", error);
-  } finally {
-    setIsUploading(false);
-  }
-};
 
+    setIsUploading(true);
+    const formData = new FormData();
+    formData.append("video", file);
+    formData.append("filename", file.name);
+
+    console.log("FormData:", formData);
+
+    try {
+      const response = await fetch("/api/uploadVideo", { // Removed trailing slash
+        method: "POST",
+        body: formData,
+      });
+
+      console.log("Response:", response);
+
+      if (response.ok) {
+        const data = await response.json();
+        setVideoPreviewUrl(data.url);
+        console.log("Video upload successful:", data.url);
+        setUploadError(null);
+      } else {
+        console.error("Video upload failed:", response.statusText);
+        const responseBody = await response.text();
+        console.error("Response body:", responseBody);
+        setUploadError(`Upload failed: ${response.statusText}`);
+      }
+    } catch (error) {
+      console.error("Error uploading video:", error);
+      if (error instanceof Error) {
+        setUploadError(`Error uploading video: ${error.message}`);
+      } else {
+        setUploadError("An unknown error occurred.");
+      }
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   return (
     <div
@@ -76,7 +90,6 @@ const handleUpload = async () => {
           <Link href="/contact" className="hover:text-gray-300">
             Contact Page
           </Link>
-          {/* Dark Mode Toggle Button */}
           <button onClick={() => setDarkMode(!darkMode)}>
             {darkMode ? "Light Mode" : "Dark Mode"}
           </button>
@@ -84,7 +97,6 @@ const handleUpload = async () => {
       </header>
 
       <main className="flex flex-col items-center p-8">
-        {/* Explanation and Instructions */}
         <div className="mb-8 text-center">
           <h2 className="text-xl font-semibold mb-4">
             Football Video Analysis with Yolov8
@@ -102,7 +114,6 @@ const handleUpload = async () => {
           </div>
         </div>
 
-        {/* Video Preview/Upload Area */}
         <div className="w-full max-w-2xl mb-8 p-6 bg-gray-800 rounded-lg shadow-md">
           {videoPreviewUrl ? (
             <video
@@ -129,7 +140,6 @@ const handleUpload = async () => {
           )}
         </div>
 
-        {/* File Details */}
         {file && (
           <section className="mb-8 text-center">
             <h2 className="text-lg font-semibold mb-2">File Details:</h2>
@@ -141,7 +151,8 @@ const handleUpload = async () => {
           </section>
         )}
 
-        {/* Analyze Button */}
+        {uploadError && <p className="text-red-500">{uploadError}</p>}
+
         {file && (
           <button
             onClick={handleUpload}
@@ -152,7 +163,6 @@ const handleUpload = async () => {
         )}
       </main>
 
-      {/* Footer */}
       <footer
         className={`p-4 text-center text-sm ${
           darkMode ? "text-gray-500" : "text-gray-400"
@@ -166,6 +176,3 @@ const handleUpload = async () => {
     </div>
   );
 }
-
-
-
