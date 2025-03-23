@@ -15,7 +15,7 @@
   },
   "functions": {
     "api/**/*.py": {
-      "excludeFiles": "public/**"
+      "runtime": "python3.8"
     }
   }
 } 
