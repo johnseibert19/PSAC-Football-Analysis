@@ -43,6 +43,7 @@ except Exception as e:
     raise
 
 @app.route('/uploads/<path:filename>')
+@app.route('/uploads/<path:filename>/')
 def serve_file(filename):
     """Serve processed video files"""
     print(f"[INFO] Serving file: {filename} from {UPLOAD_FOLDER}")
@@ -63,6 +64,7 @@ def serve_file(filename):
         return jsonify({'error': str(e)}), 404
 
 @app.route('/upload', methods=['POST', 'OPTIONS'])
+@app.route('/upload/', methods=['POST', 'OPTIONS'])
 def upload_file():
     """Handle file upload"""
     if request.method == 'OPTIONS':
@@ -103,6 +105,7 @@ def upload_file():
         return jsonify({'error': str(e), 'success': False}), 500
 
 @app.route('/detect', methods=['POST', 'OPTIONS'])
+@app.route('/detect/', methods=['POST', 'OPTIONS'])
 def detect():
     if request.method == 'OPTIONS':
         # Handle preflight request
