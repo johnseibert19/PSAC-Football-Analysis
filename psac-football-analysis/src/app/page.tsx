@@ -44,7 +44,7 @@ export default function Home() {
     formData.append('totalChunks', totalChunks.toString());
     formData.append('filename', filename);
 
-    const response = await fetch('/api/uploadVideo', {
+    const response = await fetch(`${flaskServerUrl}/upload`, {
       method: 'POST',
       body: formData,
     });
