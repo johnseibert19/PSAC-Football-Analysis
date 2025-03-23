@@ -7,12 +7,21 @@ import requests
 from flask_cors import CORS
 import urllib.parse
 import time
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 app = Flask(__name__)
-# Configure CORS to allow requests from the Next.js server
+
+# Configure CORS to allow requests from both development and production frontend
 CORS(app, resources={
     r"/*": {
-        "origins": ["http://localhost:3000"],
+        "origins": [
+            "http://localhost:3000",  # Development
+            "https://psac-football-analysis.vercel.app",  # Production
+            "https://*.vercel.app"  # Any Vercel deployment
+        ],
         "methods": ["GET", "POST", "OPTIONS"],
         "allow_headers": ["Content-Type"]
     }
@@ -24,7 +33,13 @@ UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 print(f"[INFO] Upload folder path: {UPLOAD_FOLDER}")
 
-model = YOLO('yolov8n.pt')
+# Initialize YOLO model
+try:
+    model = YOLO('yolov8n.pt')
+    print("[INFO] YOLO model loaded successfully")
+except Exception as e:
+    print(f"[ERROR] Failed to load YOLO model: {str(e)}")
+    raise
 
 @app.route('/uploads/<path:filename>')
 def serve_file(filename):
@@ -143,10 +158,10 @@ def detect():
         total_time = time.time() - start_time
         print(f"[INFO] Video processing completed in {total_time:.1f} seconds")
 
-        # Return the processed video URL with the full server URL
+        # Return the processed video URL
         return jsonify({
             'success': True,
-            'annotatedVideoUrl': f'http://localhost:5000/uploads/{output_filename}',
+            'annotatedVideoUrl': f'/uploads/{output_filename}',
             'processingTime': total_time,
             'totalFrames': frame_count
         })

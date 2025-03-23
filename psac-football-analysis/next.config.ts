@@ -8,7 +8,7 @@ const nextConfig: NextConfig = {
   assetPrefix: process.env.ELECTRON === 'true' ? './' : '/',
   experimental: {
     serverActions: {
-      bodySizeLimit: '100mb', // Adjust as needed
+      bodySizeLimit: '1gb', // Adjust as needed
     },
   },
 };

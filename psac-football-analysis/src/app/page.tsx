@@ -14,6 +14,9 @@ export default function Home() {
   const [processingTime, setProcessingTime] = useState<number | null>(null);
   const [totalFrames, setTotalFrames] = useState<number | null>(null);
 
+  // Get Flask server URL from environment variable
+  const flaskServerUrl = process.env.NEXT_PUBLIC_FLASK_SERVER_URL || 'http://localhost:5000';
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const selectedFile = e.target.files[0];
@@ -59,9 +62,9 @@ export default function Home() {
       const uploadData = await uploadResponse.json();
       console.log('Upload response:', uploadData);
 
-      // Send to Flask server for processing
+      // Send to Next.js API for processing
       console.log('Sending video for processing...');
-      const detectResponse = await fetch('http://localhost:5000/detect', {
+      const processResponse = await fetch('/api/processVideo', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -71,19 +74,19 @@ export default function Home() {
         }),
       });
 
-      if (!detectResponse.ok) {
-        const errorData = await detectResponse.json();
+      if (!processResponse.ok) {
+        const errorData = await processResponse.json();
         throw new Error(errorData.error || 'Failed to process video');
       }
 
-      const detectData = await detectResponse.json();
-      console.log('Processing response:', detectData);
+      const processData = await processResponse.json();
+      console.log('Processing response:', processData);
 
-      if (detectData.success && detectData.annotatedVideoUrl) {
-        setProcessedVideoUrl(detectData.annotatedVideoUrl);
-        setProcessingTime(detectData.processingTime);
-        setTotalFrames(detectData.totalFrames);
-        setProcessingStatus(`Processing complete! Time taken: ${detectData.processingTime?.toFixed(1) || 0} seconds`);
+      if (processData.success && processData.annotatedVideoUrl) {
+        setProcessedVideoUrl(processData.annotatedVideoUrl);
+        setProcessingTime(processData.processingTime);
+        setTotalFrames(processData.totalFrames);
+        setProcessingStatus(`Processing complete! Time taken: ${processData.processingTime?.toFixed(1) || 0} seconds`);
       } else {
         throw new Error('No processed video URL received');
       }

@@ -1,0 +1,22 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "detect/page.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/detect",
+      "dest": "detect/page.py"
+    },
+    {
+      "src": "/uploads/(.*)",
+      "dest": "detect/page.py"
+    }
+  ],
+  "env": {
+    "PYTHONPATH": "."
+  }
+} 
