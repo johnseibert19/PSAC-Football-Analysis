@@ -12,8 +12,7 @@
     "@techstark/opencv-js": "^4.8.0-release.1",
     "next": "14.1.0",
     "react": "^18",
-    "react-dom": "^18",
-    "ultralytics": "^8.1.2"
+    "react-dom": "^18"
   },
   "devDependencies": {
     "@types/node": "^20",

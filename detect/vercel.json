@@ -18,5 +18,10 @@
   ],
   "env": {
     "PYTHONPATH": "."
+  },
+  "functions": {
+    "api/**/*.py": {
+      "excludeFiles": "public/**"
+    }
   }
 } 
