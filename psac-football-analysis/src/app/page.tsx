@@ -60,10 +60,6 @@ export default function Home() {
         body: formData,
         headers: {
           'Accept': 'application/json',
-          'Origin': currentOrigin,
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'POST, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type',
         },
         mode: 'cors',
         credentials: 'include'
@@ -91,10 +87,6 @@ export default function Home() {
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
-          'Origin': currentOrigin,
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'POST, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type',
         },
         body: JSON.stringify({
           videoUrl: file.name
