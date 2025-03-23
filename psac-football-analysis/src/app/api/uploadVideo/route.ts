@@ -1,30 +1,50 @@
 import { NextRequest, NextResponse } from "next/server";
 import { writeFile } from "fs/promises";
 import path from "path";
+import fs from "fs";
 
 export async function POST(req: NextRequest) {
   console.log("API route hit!");
   try {
     const formData = await req.formData();
-    const video = formData.get("video") as Blob | null;
-    const filename = formData.get("filename") as string | null;
+    const file = formData.get("video") as File;
+    const filename = formData.get("filename") as string;
 
-    if (!video || !filename) {
-      return NextResponse.json({ error: "Video and filename are required." }, { status: 400 });
+    console.log("Received form data:", {
+      hasVideo: !!file,
+      videoType: file?.type
+    });
+
+    if (!file) {
+      console.error("Missing video file");
+      return NextResponse.json(
+        { error: "Video file is required." },
+        { status: 400 }
+      );
     }
 
-    const buffer = Buffer.from(await video.arrayBuffer());
-    const filePath = path.join(process.cwd(), "public", filename); //Removed the leading "/"
+    // Create uploads directory if it doesn't exist
+    const uploadDir = path.join(process.cwd(), "uploads");
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
 
-    console.log("File Path:", filePath); //Added console log.
-
+    // Save the file
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+    const filePath = path.join(uploadDir, filename);
     await writeFile(filePath, buffer);
 
-    const url = `/public/${filename}`;
-
-    return NextResponse.json({ url });
+    // Return the local file path instead of a URL
+    return NextResponse.json({
+      success: true,
+      filePath: filename // Just return the filename, not a full URL
+    });
   } catch (error) {
     console.error("Error uploading video:", error);
-    return NextResponse.json({ error: "Failed to upload video" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to upload video: " + (error as Error).message },
+      { status: 500 }
+    );
   }
 }
