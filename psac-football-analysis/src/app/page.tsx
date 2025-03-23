@@ -13,9 +13,13 @@ export default function Home() {
   const [processedVideoUrl, setProcessedVideoUrl] = useState<string | null>(null);
   const [processingTime, setProcessingTime] = useState<number | null>(null);
   const [totalFrames, setTotalFrames] = useState<number | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
 
   // Get Flask server URL from environment variable
   const flaskServerUrl = process.env.NEXT_PUBLIC_FLASK_SERVER_URL || 'http://localhost:5000';
+
+  // Chunk size in bytes (5MB chunks)
+  const CHUNK_SIZE = 5 * 1024 * 1024;
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -24,12 +28,32 @@ export default function Home() {
       setFile(selectedFile);
       setProcessingStatus('');
       setUploadError(null);
+      setUploadProgress(0);
       
       // Create a local preview URL for the selected file
       const previewUrl = URL.createObjectURL(selectedFile);
       setOriginalVideoUrl(previewUrl);
       console.log("Preview URL created:", previewUrl);
     }
+  };
+
+  const uploadChunk = async (chunk: Blob, chunkIndex: number, totalChunks: number, filename: string) => {
+    const formData = new FormData();
+    formData.append('chunk', chunk);
+    formData.append('chunkIndex', chunkIndex.toString());
+    formData.append('totalChunks', totalChunks.toString());
+    formData.append('filename', filename);
+
+    const response = await fetch('/api/uploadVideo', {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to upload chunk ${chunkIndex + 1}/${totalChunks}`);
+    }
+
+    return response.json();
   };
 
   const handleUpload = async () => {
@@ -44,23 +68,25 @@ export default function Home() {
       setProcessingStatus('Starting upload...');
       console.log('Starting video upload process...');
 
-      // Create FormData and append the file
-      const formData = new FormData();
-      formData.append('video', file);
-      formData.append('filename', file.name);
+      // Calculate total chunks
+      const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+      console.log(`Total chunks to upload: ${totalChunks}`);
 
-      // Upload to Next.js API
-      const uploadResponse = await fetch('/api/uploadVideo', {
-        method: 'POST',
-        body: formData,
-      });
+      // Upload chunks sequentially
+      for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
+        const start = chunkIndex * CHUNK_SIZE;
+        const end = Math.min(start + CHUNK_SIZE, file.size);
+        const chunk = file.slice(start, end);
 
-      if (!uploadResponse.ok) {
-        throw new Error('Failed to upload video');
+        setProcessingStatus(`Uploading chunk ${chunkIndex + 1}/${totalChunks}...`);
+        setUploadProgress((chunkIndex / totalChunks) * 100);
+
+        await uploadChunk(chunk, chunkIndex, totalChunks, file.name);
+        console.log(`Chunk ${chunkIndex + 1}/${totalChunks} uploaded successfully`);
       }
 
-      const uploadData = await uploadResponse.json();
-      console.log('Upload response:', uploadData);
+      setProcessingStatus('Upload complete, processing video...');
+      setUploadProgress(100);
 
       // Send to Flask server for processing
       console.log('Sending video for processing to Flask server...');
@@ -70,7 +96,7 @@ export default function Home() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          videoUrl: uploadData.filePath // Send just the filename
+          videoUrl: file.name // Send just the filename
         }),
       });
 
@@ -98,6 +124,7 @@ export default function Home() {
       setProcessingStatus('');
     } finally {
       setIsUploading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -240,6 +267,20 @@ export default function Home() {
         {uploadError && (
           <div className="mb-4 p-4 bg-red-900 text-red-100 rounded-lg">
             Error: {uploadError}
+          </div>
+        )}
+
+        {isUploading && (
+          <div className="w-full max-w-md mb-4">
+            <div className="bg-gray-700 rounded-full h-2.5">
+              <div
+                className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
+                style={{ width: `${uploadProgress}%` }}
+              ></div>
+            </div>
+            <p className="text-center mt-2 text-sm text-gray-400">
+              Upload progress: {Math.round(uploadProgress)}%
+            </p>
           </div>
         )}
 
