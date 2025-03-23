@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 export default function Home() {
@@ -97,7 +97,7 @@ export default function Home() {
   };
 
   // Cleanup preview URL when component unmounts
-  useState(() => {
+  useEffect(() => {
     return () => {
       if (originalVideoUrl?.startsWith('blob:')) {
         URL.revokeObjectURL(originalVideoUrl);
