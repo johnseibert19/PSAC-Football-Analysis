@@ -18,9 +18,6 @@ export default function Home() {
   // Get Flask server URL from environment variable
   const flaskServerUrl = process.env.NEXT_PUBLIC_FLASK_SERVER_URL || 'http://localhost:5000';
 
-  // Chunk size in bytes (50MB chunks)
-  const CHUNK_SIZE = 50 * 1024 * 1024;
-
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const selectedFile = e.target.files[0];
@@ -37,25 +34,6 @@ export default function Home() {
     }
   };
 
-  const uploadChunk = async (chunk: Blob, chunkIndex: number, totalChunks: number, filename: string) => {
-    const formData = new FormData();
-    formData.append('chunk', chunk);
-    formData.append('chunkIndex', chunkIndex.toString());
-    formData.append('totalChunks', totalChunks.toString());
-    formData.append('filename', filename);
-
-    const response = await fetch(`${flaskServerUrl}/upload`, {
-      method: 'POST',
-      body: formData,
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to upload chunk ${chunkIndex + 1}/${totalChunks}`);
-    }
-
-    return response.json();
-  };
-
   const handleUpload = async () => {
     if (!file) {
       setUploadError('Please select a video file first.');
@@ -68,24 +46,30 @@ export default function Home() {
       setProcessingStatus('Starting upload...');
       console.log('Starting video upload process...');
 
-      // Calculate total chunks
-      const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
-      console.log(`Total chunks to upload: ${totalChunks}`);
+      // Create FormData for Flask server upload
+      const formData = new FormData();
+      formData.append('file', file);
 
-      // Upload chunks sequentially
-      for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
-        const start = chunkIndex * CHUNK_SIZE;
-        const end = Math.min(start + CHUNK_SIZE, file.size);
-        const chunk = file.slice(start, end);
+      // Upload to Flask server
+      setProcessingStatus('Uploading to server...');
+      const uploadResponse = await fetch(`${flaskServerUrl}/upload`, {
+        method: 'POST',
+        body: formData,
+      });
 
-        setProcessingStatus(`Uploading chunk ${chunkIndex + 1}/${totalChunks}...`);
-        setUploadProgress((chunkIndex / totalChunks) * 100);
-
-        await uploadChunk(chunk, chunkIndex, totalChunks, file.name);
-        console.log(`Chunk ${chunkIndex + 1}/${totalChunks} uploaded successfully`);
+      if (!uploadResponse.ok) {
+        const errorData = await uploadResponse.json();
+        throw new Error(errorData.error || 'Failed to upload video');
       }
 
-      setProcessingStatus('Upload complete, processing video...');
+      const uploadData = await uploadResponse.json();
+      console.log('Upload response:', uploadData);
+
+      if (!uploadData.success) {
+        throw new Error('Upload failed');
+      }
+
+      setProcessingStatus('Processing video...');
       setUploadProgress(100);
 
       // Send to Flask server for processing
@@ -96,7 +80,7 @@ export default function Home() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          videoUrl: file.name // Send just the filename
+          videoUrl: file.name
         }),
       });
 
@@ -109,7 +93,6 @@ export default function Home() {
       console.log('Processing response:', detectData);
 
       if (detectData.success && detectData.annotatedVideoUrl) {
-        // Update the video URL to use the Flask server URL
         const fullVideoUrl = `${flaskServerUrl}${detectData.annotatedVideoUrl}`;
         setProcessedVideoUrl(fullVideoUrl);
         setProcessingTime(detectData.processingTime);
