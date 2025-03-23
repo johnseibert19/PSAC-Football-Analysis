@@ -8,6 +8,7 @@ from flask_cors import CORS
 import urllib.parse
 import time
 from dotenv import load_dotenv
+from werkzeug.utils import secure_filename
 
 # Load environment variables
 load_dotenv()
@@ -60,6 +61,46 @@ def serve_file(filename):
     except Exception as e:
         print(f"[ERROR] Error serving file: {str(e)}")
         return jsonify({'error': str(e)}), 404
+
+@app.route('/upload', methods=['POST', 'OPTIONS'])
+def upload_file():
+    """Handle file upload"""
+    if request.method == 'OPTIONS':
+        return '', 204
+
+    try:
+        if 'file' not in request.files:
+            print("[ERROR] No file provided in request")
+            return jsonify({'error': 'No file provided', 'success': False}), 400
+
+        file = request.files['file']
+        if file.filename == '':
+            print("[ERROR] No filename provided")
+            return jsonify({'error': 'No filename provided', 'success': False}), 400
+
+        # Secure the filename
+        filename = secure_filename(file.filename)
+        print(f"[INFO] Processing file: {filename}")
+
+        # Create a temporary directory for processing if it doesn't exist
+        temp_dir = os.path.join(UPLOAD_FOLDER, 'temp')
+        os.makedirs(temp_dir, exist_ok=True)
+
+        # Save the file to the uploads directory
+        file_path = os.path.join(UPLOAD_FOLDER, filename)
+        file.save(file_path)
+        print(f"[INFO] File saved to: {file_path}")
+
+        # Return success response with file path
+        return jsonify({
+            'success': True,
+            'filePath': filename,
+            'message': 'File uploaded successfully'
+        })
+
+    except Exception as e:
+        print(f"[ERROR] Error uploading file: {str(e)}")
+        return jsonify({'error': str(e), 'success': False}), 500
 
 @app.route('/detect', methods=['POST', 'OPTIONS'])
 def detect():
