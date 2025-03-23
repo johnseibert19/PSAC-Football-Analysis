@@ -1,11 +1,5 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "detect/page.py",
-      "use": "@vercel/python"
-    }
-  ],
   "routes": [
     {
       "src": "/detect",
@@ -18,10 +12,5 @@
   ],
   "env": {
     "PYTHONPATH": "."
-  },
-  "functions": {
-    "api/**/*.py": {
-      "excludeFiles": "public/**"
-    }
   }
 } 

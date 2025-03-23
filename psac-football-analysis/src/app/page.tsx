@@ -62,9 +62,9 @@ export default function Home() {
       const uploadData = await uploadResponse.json();
       console.log('Upload response:', uploadData);
 
-      // Send to Next.js API for processing
-      console.log('Sending video for processing...');
-      const processResponse = await fetch('/api/processVideo', {
+      // Send to Flask server for processing
+      console.log('Sending video for processing to Flask server...');
+      const detectResponse = await fetch(`${flaskServerUrl}/detect`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -74,19 +74,21 @@ export default function Home() {
         }),
       });
 
-      if (!processResponse.ok) {
-        const errorData = await processResponse.json();
+      if (!detectResponse.ok) {
+        const errorData = await detectResponse.json();
         throw new Error(errorData.error || 'Failed to process video');
       }
 
-      const processData = await processResponse.json();
-      console.log('Processing response:', processData);
+      const detectData = await detectResponse.json();
+      console.log('Processing response:', detectData);
 
-      if (processData.success && processData.annotatedVideoUrl) {
-        setProcessedVideoUrl(processData.annotatedVideoUrl);
-        setProcessingTime(processData.processingTime);
-        setTotalFrames(processData.totalFrames);
-        setProcessingStatus(`Processing complete! Time taken: ${processData.processingTime?.toFixed(1) || 0} seconds`);
+      if (detectData.success && detectData.annotatedVideoUrl) {
+        // Update the video URL to use the Flask server URL
+        const fullVideoUrl = `${flaskServerUrl}${detectData.annotatedVideoUrl}`;
+        setProcessedVideoUrl(fullVideoUrl);
+        setProcessingTime(detectData.processingTime);
+        setTotalFrames(detectData.totalFrames);
+        setProcessingStatus(`Processing complete! Time taken: ${detectData.processingTime?.toFixed(1) || 0} seconds`);
       } else {
         throw new Error('No processed video URL received');
       }
