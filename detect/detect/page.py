@@ -19,15 +19,18 @@ app = Flask(__name__)
 CORS(app, 
      resources={
          r"/*": {
-             "origins": ["*"],  # Allow all origins
+             "origins": [
+                 "http://localhost:3000",  # Development
+                 "https://psac-football-analysis.vercel.app",  # Production
+                 "https://*.vercel.app"  # Any Vercel deployment
+             ],
              "methods": ["GET", "POST", "OPTIONS"],
              "allow_headers": ["Content-Type", "Accept", "Origin"],
              "supports_credentials": True,
              "expose_headers": ["Content-Type", "Accept", "Origin"]
          }
      },
-     supports_credentials=True,
-     allow_credentials=True
+     supports_credentials=True
 )
 
 # Create uploads directory if it doesn't exist
@@ -72,10 +75,12 @@ def upload_file():
     if request.method == 'OPTIONS':
         # Handle preflight request
         response = jsonify({'message': 'OK'})
-        response.headers.add('Access-Control-Allow-Origin', '*')
-        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Accept,Origin')
-        response.headers.add('Access-Control-Allow-Methods', 'POST,OPTIONS')
-        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        origin = request.headers.get('Origin')
+        if origin in ["http://localhost:3000", "https://psac-football-analysis.vercel.app", "https://*.vercel.app"]:
+            response.headers.add('Access-Control-Allow-Origin', origin)
+            response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Accept,Origin')
+            response.headers.add('Access-Control-Allow-Methods', 'POST,OPTIONS')
+            response.headers.add('Access-Control-Allow-Credentials', 'true')
         return response
 
     try:
@@ -107,7 +112,10 @@ def upload_file():
             'filePath': filename,
             'message': 'File uploaded successfully'
         })
-        response.headers.add('Access-Control-Allow-Origin', '*')
+        origin = request.headers.get('Origin')
+        if origin in ["http://localhost:3000", "https://psac-football-analysis.vercel.app", "https://*.vercel.app"]:
+            response.headers.add('Access-Control-Allow-Origin', origin)
+            response.headers.add('Access-Control-Allow-Credentials', 'true')
         return response
 
     except Exception as e:
@@ -120,10 +128,12 @@ def detect():
     if request.method == 'OPTIONS':
         # Handle preflight request
         response = jsonify({'message': 'OK'})
-        response.headers.add('Access-Control-Allow-Origin', '*')
-        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Accept,Origin')
-        response.headers.add('Access-Control-Allow-Methods', 'POST,OPTIONS')
-        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        origin = request.headers.get('Origin')
+        if origin in ["http://localhost:3000", "https://psac-football-analysis.vercel.app", "https://*.vercel.app"]:
+            response.headers.add('Access-Control-Allow-Origin', origin)
+            response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Accept,Origin')
+            response.headers.add('Access-Control-Allow-Methods', 'POST,OPTIONS')
+            response.headers.add('Access-Control-Allow-Credentials', 'true')
         return response
 
     try:
@@ -224,7 +234,10 @@ def detect():
             'processingTime': total_time,
             'totalFrames': frame_count
         })
-        response.headers.add('Access-Control-Allow-Origin', '*')
+        origin = request.headers.get('Origin')
+        if origin in ["http://localhost:3000", "https://psac-football-analysis.vercel.app", "https://*.vercel.app"]:
+            response.headers.add('Access-Control-Allow-Origin', origin)
+            response.headers.add('Access-Control-Allow-Credentials', 'true')
         return response
 
     except Exception as e:
