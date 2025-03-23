@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile, mkdir } from "fs/promises";
+import { writeFile, mkdir, readFile, unlink, rmdir } from "fs/promises";
+import { createWriteStream } from "fs";
 import { join } from "path";
 import { existsSync } from "fs";
 
@@ -47,12 +48,12 @@ export async function POST(req: NextRequest) {
     // If this is the last chunk, combine all chunks
     if (chunkIndex === totalChunks - 1) {
       const finalPath = join(uploadDir, filename);
-      const writeStream = require("fs").createWriteStream(finalPath);
+      const writeStream = createWriteStream(finalPath);
 
       // Combine all chunks
       for (let i = 0; i < totalChunks; i++) {
         const chunkPath = join(tempDir, `${filename}.part${i}`);
-        const chunkBuffer = await require("fs").promises.readFile(chunkPath);
+        const chunkBuffer = await readFile(chunkPath);
         writeStream.write(chunkBuffer);
       }
 
@@ -61,11 +62,11 @@ export async function POST(req: NextRequest) {
       // Clean up temporary chunks
       for (let i = 0; i < totalChunks; i++) {
         const chunkPath = join(tempDir, `${filename}.part${i}`);
-        await require("fs").promises.unlink(chunkPath);
+        await unlink(chunkPath);
       }
 
       // Remove temp directory if empty
-      await require("fs").promises.rmdir(tempDir);
+      await rmdir(tempDir);
 
       return NextResponse.json({
         success: true,
