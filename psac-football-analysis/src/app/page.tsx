@@ -18,8 +18,8 @@ export default function Home() {
   // Get Flask server URL from environment variable
   const flaskServerUrl = process.env.NEXT_PUBLIC_FLASK_SERVER_URL || 'http://localhost:5000';
 
-  // Chunk size in bytes (5MB chunks)
-  const CHUNK_SIZE = 5 * 1024 * 1024;
+  // Chunk size in bytes (50MB chunks)
+  const CHUNK_SIZE = 50 * 1024 * 1024;
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
