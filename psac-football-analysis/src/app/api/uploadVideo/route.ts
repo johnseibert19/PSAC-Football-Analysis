@@ -1,49 +1,88 @@
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile } from "fs/promises";
-import path from "path";
-import fs from "fs";
+import { writeFile, mkdir, readFile, unlink, rmdir } from "fs/promises";
+import { createWriteStream } from "fs";
+import { join } from "path";
+import { existsSync } from "fs";
 
 export async function POST(req: NextRequest) {
   console.log("API route hit!");
   try {
     const formData = await req.formData();
-    const file = formData.get("video") as File;
+    const chunk = formData.get("chunk") as Blob;
+    const chunkIndex = parseInt(formData.get("chunkIndex") as string);
+    const totalChunks = parseInt(formData.get("totalChunks") as string);
     const filename = formData.get("filename") as string;
 
     console.log("Received form data:", {
-      hasVideo: !!file,
-      videoType: file?.type
+      hasChunk: !!chunk,
+      chunkIndex: chunkIndex,
+      totalChunks: totalChunks,
+      filename: filename
     });
 
-    if (!file) {
-      console.error("Missing video file");
+    if (!chunk) {
+      console.error("No chunk provided");
       return NextResponse.json(
-        { error: "Video file is required." },
+        { error: "No chunk provided" },
         { status: 400 }
       );
     }
 
     // Create uploads directory if it doesn't exist
-    const uploadDir = path.join(process.cwd(), "uploads");
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
+    const uploadDir = join(process.cwd(), "uploads", "public");
+    if (!existsSync(uploadDir)) {
+      await mkdir(uploadDir, { recursive: true });
     }
 
-    // Save the file
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    const filePath = path.join(uploadDir, filename);
-    await writeFile(filePath, buffer);
+    // Create a temporary directory for chunks if it doesn't exist
+    const tempDir = join(uploadDir, "temp");
+    if (!existsSync(tempDir)) {
+      await mkdir(tempDir, { recursive: true });
+    }
 
-    // Return the local file path instead of a URL
+    // Save the chunk
+    const chunkPath = join(tempDir, `${filename}.part${chunkIndex}`);
+    const chunkBuffer = Buffer.from(await chunk.arrayBuffer());
+    await writeFile(chunkPath, chunkBuffer);
+
+    // If this is the last chunk, combine all chunks
+    if (chunkIndex === totalChunks - 1) {
+      const finalPath = join(uploadDir, filename);
+      const writeStream = createWriteStream(finalPath);
+
+      // Combine all chunks
+      for (let i = 0; i < totalChunks; i++) {
+        const chunkPath = join(tempDir, `${filename}.part${i}`);
+        const chunkBuffer = await readFile(chunkPath);
+        writeStream.write(chunkBuffer);
+      }
+
+      writeStream.end();
+
+      // Clean up temporary chunks
+      for (let i = 0; i < totalChunks; i++) {
+        const chunkPath = join(tempDir, `${filename}.part${i}`);
+        await unlink(chunkPath);
+      }
+
+      // Remove temp directory if empty
+      await rmdir(tempDir);
+
+      return NextResponse.json({
+        success: true,
+        filePath: `/uploads/public/${filename}`
+      });
+    }
+
+    // Return success for intermediate chunks
     return NextResponse.json({
       success: true,
-      filePath: filename // Just return the filename, not a full URL
+      message: `Chunk ${chunkIndex + 1}/${totalChunks} uploaded successfully`
     });
   } catch (error) {
-    console.error("Error uploading video:", error);
+    console.error("Error uploading chunk:", error);
     return NextResponse.json(
-      { error: "Failed to upload video: " + (error as Error).message },
+      { error: "Error uploading chunk" },
       { status: 500 }
     );
   }
