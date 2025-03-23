@@ -15,8 +15,8 @@ export default function Home() {
   const [totalFrames, setTotalFrames] = useState<number | null>(null);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
 
-  // Get Flask server URL from environment variable
-  const flaskServerUrl = process.env.NEXT_PUBLIC_FLASK_SERVER_URL || 'http://localhost:5000';
+  // Get Flask server URL from environment variable and ensure it doesn't end with a slash
+  const flaskServerUrl = (process.env.NEXT_PUBLIC_FLASK_SERVER_URL || 'http://localhost:5000').replace(/\/$/, '');
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -55,6 +55,14 @@ export default function Home() {
       const uploadResponse = await fetch(`${flaskServerUrl}/upload`, {
         method: 'POST',
         body: formData,
+        headers: {
+          'Accept': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type',
+        },
+        mode: 'cors',
+        credentials: 'include'
       });
 
       if (!uploadResponse.ok) {
@@ -78,10 +86,16 @@ export default function Home() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type',
         },
         body: JSON.stringify({
           videoUrl: file.name
         }),
+        mode: 'cors',
+        credentials: 'include'
       });
 
       if (!detectResponse.ok) {
