@@ -5,7 +5,6 @@ import Link from 'next/link';
 
 export default function Home() {
   const [file, setFile] = useState<File | null>(null);
-  const [videoPreviewUrl, setVideoPreviewUrl] = useState<string | null>(null);
   const [darkMode, setDarkMode] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -20,7 +19,6 @@ export default function Home() {
       const selectedFile = e.target.files[0];
       console.log("File selected:", selectedFile.name);
       setFile(selectedFile);
-      setVideoPreviewUrl(null);
       setProcessingStatus('');
       setUploadError(null);
       
