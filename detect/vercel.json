@@ -15,7 +15,7 @@
   },
   "functions": {
     "detect/**/*.py": {
-      "runtime": "python3.8"
+      "runtime": "@vercel/python@3.12"
     }
   }
 } 
