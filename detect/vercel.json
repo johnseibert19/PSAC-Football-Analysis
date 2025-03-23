@@ -14,7 +14,7 @@
     "PYTHONPATH": "."
   },
   "functions": {
-    "api/**/*.py": {
+    "detect/**/*.py": {
       "runtime": "python3.8"
     }
   }
