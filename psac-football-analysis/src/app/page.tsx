@@ -17,9 +17,6 @@ export default function Home() {
 
   // Get Flask server URL from environment variable and ensure it doesn't end with a slash
   const flaskServerUrl = (process.env.NEXT_PUBLIC_FLASK_SERVER_URL || 'http://localhost:5000').replace(/\/$/, '');
-  
-  // Get the current origin (URL) of the deployed Next.js instance
-  const currentOrigin = typeof window !== 'undefined' ? window.location.origin : '';
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -60,10 +57,6 @@ export default function Home() {
         body: formData,
         headers: {
           'Accept': 'application/json',
-          'Origin': currentOrigin,
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'POST, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type',
         },
         mode: 'cors',
         credentials: 'include'
@@ -91,10 +84,6 @@ export default function Home() {
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
-          'Origin': currentOrigin,
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'POST, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type',
         },
         body: JSON.stringify({
           videoUrl: file.name

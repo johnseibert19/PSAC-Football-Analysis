@@ -16,17 +16,19 @@ load_dotenv()
 app = Flask(__name__)
 
 # Configure CORS to allow requests from both development and production frontend
-CORS(app, resources={
-    r"/*": {
-        "origins": [
-            "http://localhost:3000",  # Development
-            "https://psac-football-analysis.vercel.app",  # Production
-            "https://*.vercel.app"  # Any Vercel deployment
-        ],
-        "methods": ["GET", "POST", "OPTIONS"],
-        "allow_headers": ["Content-Type"]
-    }
-})
+CORS(app, 
+     resources={
+         r"/*": {
+             "origins": ["*"],  # Allow all origins
+             "methods": ["GET", "POST", "OPTIONS"],
+             "allow_headers": ["Content-Type", "Accept", "Origin"],
+             "supports_credentials": True,
+             "expose_headers": ["Content-Type", "Accept", "Origin"]
+         }
+     },
+     supports_credentials=True,
+     allow_credentials=True
+)
 
 # Create uploads directory if it doesn't exist
 # Look for uploads in the Next.js project directory
@@ -68,7 +70,13 @@ def serve_file(filename):
 def upload_file():
     """Handle file upload"""
     if request.method == 'OPTIONS':
-        return '', 204
+        # Handle preflight request
+        response = jsonify({'message': 'OK'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Accept,Origin')
+        response.headers.add('Access-Control-Allow-Methods', 'POST,OPTIONS')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        return response
 
     try:
         if 'file' not in request.files:
@@ -94,11 +102,13 @@ def upload_file():
         print(f"[INFO] File saved to: {file_path}")
 
         # Return success response with file path
-        return jsonify({
+        response = jsonify({
             'success': True,
             'filePath': filename,
             'message': 'File uploaded successfully'
         })
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response
 
     except Exception as e:
         print(f"[ERROR] Error uploading file: {str(e)}")
@@ -109,7 +119,12 @@ def upload_file():
 def detect():
     if request.method == 'OPTIONS':
         # Handle preflight request
-        return '', 204
+        response = jsonify({'message': 'OK'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Accept,Origin')
+        response.headers.add('Access-Control-Allow-Methods', 'POST,OPTIONS')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        return response
 
     try:
         print("[INFO] Received request to /detect endpoint")
@@ -203,12 +218,14 @@ def detect():
         print(f"[INFO] Video processing completed in {total_time:.1f} seconds")
 
         # Return the processed video URL
-        return jsonify({
+        response = jsonify({
             'success': True,
             'annotatedVideoUrl': f'/uploads/{output_filename}',
             'processingTime': total_time,
             'totalFrames': frame_count
         })
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response
 
     except Exception as e:
         print(f"[ERROR] Error processing video: {str(e)}")
