@@ -3,11 +3,15 @@
   "routes": [
     {
       "src": "/detect",
-      "dest": "detect/page.py"
+      "dest": "api/page.py"
     },
     {
       "src": "/uploads/(.*)",
-      "dest": "detect/page.py"
+      "dest": "api/page.py"
+    },
+    {
+      "src": "/api/(.*)",
+      "dest": "/api"
     }
   ],
   "env": {
