@@ -3,21 +3,15 @@
 import React, { useState } from 'react';
 
 // API URL configuration
-const API_URL = typeof window !== 'undefined' 
-  ? window.location.hostname === 'localhost'
-    ? 'http://localhost:5000'
-    : 'https://psacfootball-python-f58da7eeb938.herokuapp.com'
-  : 'https://psacfootball-python-f58da7eeb938.herokuapp.com';
+const API_URL = process.env.NEXT_PUBLIC_FLASK_SERVER_URL || 'https://psacfootball-python-f58da7eeb938.herokuapp.com';
 
 export default function Home() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [uploadProgress, setUploadProgress] = useState(0);
   const [processingProgress, setProcessingProgress] = useState(0);
   const [statusMessage, setStatusMessage] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [processedVideoUrl, setProcessedVideoUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [taskId, setTaskId] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -26,7 +20,6 @@ export default function Home() {
       setSelectedFile(file);
       setError(null);
       setProcessedVideoUrl(null);
-      setTaskId(null);
     }
   };
 
@@ -57,7 +50,6 @@ export default function Home() {
       }
 
       const data = await response.json();
-      setTaskId(data.task_id);
       setIsProcessing(true);
       setStatusMessage('Processing started...');
       
