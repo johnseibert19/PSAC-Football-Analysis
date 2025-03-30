@@ -13,7 +13,6 @@ export default function Home() {
   const [processedVideoUrl, setProcessedVideoUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [currentTaskId, setCurrentTaskId] = useState<string | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -21,7 +20,6 @@ export default function Home() {
       setSelectedFile(file);
       setError(null);
       setProcessedVideoUrl(null);
-      setCurrentTaskId(null);
     }
   };
 
@@ -96,7 +94,6 @@ export default function Home() {
       }
 
       const data = await response.json();
-      setCurrentTaskId(data.task_id);
       
       // Start processing in a separate step
       await startProcessing(data.task_id);
