@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 // API URL configuration
 const API_URL = process.env.NEXT_PUBLIC_FLASK_SERVER_URL || 'https://psacfootball-python-f58da7eeb938.herokuapp.com';
@@ -13,6 +13,8 @@ export default function Home() {
   const [processedVideoUrl, setProcessedVideoUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+  const MAX_RETRIES = 3;
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -20,6 +22,7 @@ export default function Home() {
       setSelectedFile(file);
       setError(null);
       setProcessedVideoUrl(null);
+      setRetryCount(0);
     }
   };
 
@@ -28,37 +31,54 @@ export default function Home() {
     setStatusMessage('Processing started...');
     
     try {
-      // Start SSE connection for status updates
-      const eventSource = new EventSource(`${API_URL}/events/${taskId}`);
-      
-      eventSource.onmessage = (event) => {
-        const eventData = JSON.parse(event.data);
-        setStatusMessage(eventData.message);
+      // Start SSE connection for status updates with retry logic
+      const connectSSE = () => {
+        const eventSource = new EventSource(`${API_URL}/events/${taskId}`);
         
-        if (eventData.progress !== undefined) {
-          setProcessingProgress(eventData.progress);
-        }
+        eventSource.onmessage = (event) => {
+          try {
+            const eventData = JSON.parse(event.data);
+            setStatusMessage(eventData.message);
+            
+            if (eventData.progress !== undefined) {
+              setProcessingProgress(eventData.progress);
+            }
+            
+            if (eventData.status === 'completed') {
+              eventSource.close();
+              setIsProcessing(false);
+              setIsUploading(false);
+              setProcessedVideoUrl(`${API_URL}/uploads/processed_${selectedFile?.name}`);
+            } else if (eventData.status === 'error') {
+              eventSource.close();
+              setIsProcessing(false);
+              setIsUploading(false);
+              setError(eventData.message || 'Processing failed');
+            }
+          } catch (err) {
+            console.error('Error parsing SSE message:', err);
+          }
+        };
         
-        if (eventData.status === 'completed') {
+        eventSource.onerror = (error) => {
+          console.error('EventSource error:', error);
           eventSource.close();
-          setIsProcessing(false);
-          setIsUploading(false);
-          setProcessedVideoUrl(`${API_URL}/uploads/processed_${selectedFile?.name}`);
-        } else if (eventData.status === 'error') {
-          eventSource.close();
-          setIsProcessing(false);
-          setIsUploading(false);
-          setError(eventData.message || 'Processing failed');
-        }
+          
+          // Retry connection if we haven't exceeded max retries
+          if (retryCount < MAX_RETRIES) {
+            setRetryCount(prev => prev + 1);
+            setStatusMessage(`Connection lost. Retrying... (${retryCount + 1}/${MAX_RETRIES})`);
+            setTimeout(connectSSE, 2000); // Retry after 2 seconds
+          } else {
+            setIsProcessing(false);
+            setIsUploading(false);
+            setError('Connection error while processing video. Please try again.');
+          }
+        };
       };
       
-      eventSource.onerror = (error) => {
-        console.error('EventSource error:', error);
-        eventSource.close();
-        setIsProcessing(false);
-        setIsUploading(false);
-        setError('Connection error while processing video');
-      };
+      connectSSE();
+      
     } catch (err) {
       console.error('Processing error:', err);
       setError('Failed to start processing');
@@ -105,6 +125,13 @@ export default function Home() {
       setIsProcessing(false);
     }
   };
+
+  // Cleanup on component unmount
+  useEffect(() => {
+    return () => {
+      // Any cleanup needed
+    };
+  }, []);
 
   return (
     <main className="min-h-screen p-8">
