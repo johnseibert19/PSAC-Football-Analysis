@@ -13,6 +13,7 @@ export default function Home() {
   const [processedVideoUrl, setProcessedVideoUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [currentTaskId, setCurrentTaskId] = useState<string | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -20,6 +21,51 @@ export default function Home() {
       setSelectedFile(file);
       setError(null);
       setProcessedVideoUrl(null);
+      setCurrentTaskId(null);
+    }
+  };
+
+  const startProcessing = async (taskId: string) => {
+    setIsProcessing(true);
+    setStatusMessage('Processing started...');
+    
+    try {
+      // Start SSE connection for status updates
+      const eventSource = new EventSource(`${API_URL}/events/${taskId}`);
+      
+      eventSource.onmessage = (event) => {
+        const eventData = JSON.parse(event.data);
+        setStatusMessage(eventData.message);
+        
+        if (eventData.progress !== undefined) {
+          setProcessingProgress(eventData.progress);
+        }
+        
+        if (eventData.status === 'completed') {
+          eventSource.close();
+          setIsProcessing(false);
+          setIsUploading(false);
+          setProcessedVideoUrl(`${API_URL}/uploads/processed_${selectedFile?.name}`);
+        } else if (eventData.status === 'error') {
+          eventSource.close();
+          setIsProcessing(false);
+          setIsUploading(false);
+          setError(eventData.message || 'Processing failed');
+        }
+      };
+      
+      eventSource.onerror = (error) => {
+        console.error('EventSource error:', error);
+        eventSource.close();
+        setIsProcessing(false);
+        setIsUploading(false);
+        setError('Connection error while processing video');
+      };
+    } catch (err) {
+      console.error('Processing error:', err);
+      setError('Failed to start processing');
+      setIsProcessing(false);
+      setIsUploading(false);
     }
   };
 
@@ -50,40 +96,10 @@ export default function Home() {
       }
 
       const data = await response.json();
-      setIsProcessing(true);
-      setStatusMessage('Processing started...');
+      setCurrentTaskId(data.task_id);
       
-      // Start SSE connection for status updates
-      const eventSource = new EventSource(`${API_URL}/events/${data.task_id}`);
-      
-      eventSource.onmessage = (event) => {
-        const eventData = JSON.parse(event.data);
-        setStatusMessage(eventData.message);
-        
-        if (eventData.progress !== undefined) {
-          setProcessingProgress(eventData.progress);
-        }
-        
-        if (eventData.status === 'completed') {
-          eventSource.close();
-          setIsProcessing(false);
-          setIsUploading(false);
-          setProcessedVideoUrl(`${API_URL}/uploads/processed_${selectedFile.name}`);
-        } else if (eventData.status === 'error') {
-          eventSource.close();
-          setIsProcessing(false);
-          setIsUploading(false);
-          setError(eventData.message || 'Processing failed');
-        }
-      };
-      
-      eventSource.onerror = (error) => {
-        console.error('EventSource error:', error);
-        eventSource.close();
-        setIsProcessing(false);
-        setIsUploading(false);
-        setError('Connection error while processing video');
-      };
+      // Start processing in a separate step
+      await startProcessing(data.task_id);
       
     } catch (err) {
       console.error('Upload error:', err);
