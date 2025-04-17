@@ -3,6 +3,26 @@
     "multer": "^1.4.5-lts.1"
   },
   "devDependencies": {
-    "@types/multer": "^1.4.12"
-  }
+    "@types/multer": "^1.4.12",
+    "parcel": "^2.14.4",
+    "typescript": "^5.8.3"
+  },
+  "name": "psac-football-analysis",
+  "version": "1.0.0",
+  "description": "CMSC 480 Software Engineering Capstone project.\r Authors: Matt Boehme, Zach Eisele, Justin Peasley, John Seibert",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/johnseibert19/PSAC-Football-Analysis.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/johnseibert19/PSAC-Football-Analysis/issues"
+  },
+  "homepage": "https://github.com/johnseibert19/PSAC-Football-Analysis#readme"
 }
