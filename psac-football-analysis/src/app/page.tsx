@@ -1,217 +1,174 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
+import { NextPage } from 'next';
 
 // API URL configuration
-const API_URL = process.env.NEXT_PUBLIC_FLASK_SERVER_URL || 'https://psacfootball-python-f58da7eeb938.herokuapp.com';
+const API_URL = process.env.NEXT_PUBLIC_FLASK_SERVER_URL || 'http://3.148.242.252:5000';
 
-export default function Home() {
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [processingProgress, setProcessingProgress] = useState(0);
-  const [statusMessage, setStatusMessage] = useState('');
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [processedVideoUrl, setProcessedVideoUrl] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const [retryCount, setRetryCount] = useState(0);
-  const MAX_RETRIES = 3;
+interface VideoProcessingState {
+  videoUrl: string | null;
+  error: string | null;
+  isProcessing: boolean;
+  progress: number;
+}
+
+const Home: NextPage = () => {
+  const [file, setFile] = useState<File | null>(null);
+  const [state, setState] = useState<VideoProcessingState>({
+    videoUrl: null,
+    error: null,
+    isProcessing: false,
+    progress: 0
+  });
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
-      setError(null);
-      setProcessedVideoUrl(null);
-      setRetryCount(0);
-    }
-  };
-
-  const startProcessing = async (taskId: string) => {
-    setIsProcessing(true);
-    setStatusMessage('Processing started...');
-    
-    try {
-      // Start SSE connection for status updates with retry logic
-      const connectSSE = () => {
-        const eventSource = new EventSource(`${API_URL}/events/${taskId}`);
-        
-        eventSource.onmessage = (event) => {
-          try {
-            const eventData = JSON.parse(event.data);
-            setStatusMessage(eventData.message);
-            
-            if (eventData.progress !== undefined) {
-              setProcessingProgress(eventData.progress);
-            }
-            
-            if (eventData.status === 'completed') {
-              eventSource.close();
-              setIsProcessing(false);
-              setIsUploading(false);
-              setProcessedVideoUrl(`${API_URL}/uploads/processed_${selectedFile?.name}`);
-            } else if (eventData.status === 'error') {
-              eventSource.close();
-              setIsProcessing(false);
-              setIsUploading(false);
-              setError(eventData.message || 'Processing failed');
-            }
-          } catch (err) {
-            console.error('Error parsing SSE message:', err);
-          }
-        };
-        
-        eventSource.onerror = (error) => {
-          console.error('EventSource error:', error);
-          eventSource.close();
-          
-          // Retry connection if we haven't exceeded max retries
-          if (retryCount < MAX_RETRIES) {
-            setRetryCount(prev => prev + 1);
-            setStatusMessage(`Connection lost. Retrying... (${retryCount + 1}/${MAX_RETRIES})`);
-            setTimeout(connectSSE, 2000); // Retry after 2 seconds
-          } else {
-            setIsProcessing(false);
-            setIsUploading(false);
-            setError('Connection error while processing video. Please try again.');
-          }
-        };
-      };
-      
-      connectSSE();
-      
-    } catch (err) {
-      console.error('Processing error:', err);
-      setError('Failed to start processing');
-      setIsProcessing(false);
-      setIsUploading(false);
+    const selectedFile = e.target.files?.[0];
+    if (selectedFile) {
+      setFile(selectedFile);
+      setState({
+        videoUrl: null,
+        error: null,
+        isProcessing: false,
+        progress: 0
+      });
     }
   };
 
   const handleUpload = async () => {
-    if (!selectedFile) {
-      setError('Please select a file first');
+    if (!file) {
+      setState(prev => ({ ...prev, error: 'Please select a file' }));
       return;
     }
 
-    setIsUploading(true);
-    setIsProcessing(false);
-    setError(null);
-    setProcessedVideoUrl(null);
-    setStatusMessage('Uploading file...');
+    setState(prev => ({ ...prev, isProcessing: true, error: null }));
 
     try {
       const formData = new FormData();
-      formData.append('file', selectedFile);
+      formData.append('file', file);
 
-      const response = await fetch(`${API_URL}/upload`, {
+      const uploadResponse = await fetch(`${API_URL}/upload`, {
         method: 'POST',
         body: formData,
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Upload failed');
+      if (!uploadResponse.ok) {
+        throw new Error('Failed to upload file');
       }
 
-      const data = await response.json();
-      
-      // Start processing in a separate step
-      await startProcessing(data.task_id);
-      
-    } catch (err) {
-      console.error('Upload error:', err);
-      setError(err instanceof Error ? err.message : 'Upload failed');
-      setIsUploading(false);
-      setIsProcessing(false);
+      const uploadData = await uploadResponse.json();
+      const taskId = uploadData.task_id;
+
+      const eventSource = new EventSource(`${API_URL}/events/${taskId}`);
+
+      eventSource.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        
+        switch (data.type) {
+          case 'progress':
+            setState(prev => ({ ...prev, progress: data.progress }));
+            break;
+          case 'complete':
+            eventSource.close();
+            setState(prev => ({
+              ...prev,
+              isProcessing: false,
+              videoUrl: `${API_URL}${data.video_url}`,
+              progress: 100
+            }));
+            break;
+          case 'error':
+            eventSource.close();
+            setState(prev => ({
+              ...prev,
+              isProcessing: false,
+              error: data.error
+            }));
+            break;
+        }
+      };
+
+      eventSource.onerror = () => {
+        eventSource.close();
+        setState(prev => ({
+          ...prev,
+          isProcessing: false,
+          error: 'Connection lost'
+        }));
+      };
+
+    } catch (error) {
+      setState(prev => ({
+        ...prev,
+        isProcessing: false,
+        error: error instanceof Error ? error.message : 'An error occurred'
+      }));
     }
   };
 
-  // Cleanup on component unmount
-  useEffect(() => {
-    return () => {
-      // Any cleanup needed
-    };
-  }, []);
-
   return (
-    <main className="min-h-screen p-8">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-4xl font-bold mb-8">PSAC Football Analysis</h1>
+    <main className="flex min-h-screen flex-col items-center justify-between p-24">
+      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm">
+        <h1 className="text-4xl font-bold mb-8 text-center">PSAC Football Analysis</h1>
         
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
-          <h2 className="text-2xl font-semibold mb-4">Upload Video</h2>
-          
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Select Video File
-              </label>
-              <input
-                type="file"
-                accept="video/*"
-                onChange={handleFileChange}
-                className="block w-full text-sm text-gray-500
-                  file:mr-4 file:py-2 file:px-4
-                  file:rounded-full file:border-0
-                  file:text-sm file:font-semibold
-                  file:bg-blue-50 file:text-blue-700
-                  hover:file:bg-blue-100"
-                disabled={isUploading || isProcessing}
-              />
-            </div>
-
-            {selectedFile && (
-              <div className="text-sm text-gray-600">
-                Selected file: {selectedFile.name}
-              </div>
-            )}
-
+        <div className="mb-8">
+          <input
+            type="file"
+            onChange={handleFileChange}
+            accept="video/*"
+            className="block w-full text-sm text-gray-500
+              file:mr-4 file:py-2 file:px-4
+              file:rounded-full file:border-0
+              file:text-sm file:font-semibold
+              file:bg-blue-50 file:text-blue-700
+              hover:file:bg-blue-100"
+          />
+          {file && (
             <button
               onClick={handleUpload}
-              disabled={!selectedFile || isUploading || isProcessing}
-              className={`w-full py-2 px-4 rounded-md text-white font-medium
-                ${!selectedFile || isUploading || isProcessing
-                  ? 'bg-gray-400 cursor-not-allowed'
-                  : 'bg-blue-600 hover:bg-blue-700'}`}
+              disabled={state.isProcessing}
+              className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-400"
             >
-              {isUploading ? 'Uploading...' : isProcessing ? 'Processing...' : 'Upload and Process'}
+              {state.isProcessing ? 'Processing...' : 'Upload'}
             </button>
-
-            {isProcessing && (
-              <div className="mt-4">
-                <div className="w-full bg-gray-200 rounded-full h-2.5">
-                  <div
-                    className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
-                    style={{ width: `${processingProgress}%` }}
-                  ></div>
-                </div>
-                <div className="text-sm text-gray-600 mt-2">
-                  {statusMessage}
-                </div>
-              </div>
-            )}
-
-            {error && (
-              <div className="mt-4 p-4 bg-red-50 text-red-700 rounded-md">
-                {error}
-              </div>
-            )}
-
-            {processedVideoUrl && (
-              <div className="mt-4">
-                <h3 className="text-lg font-semibold mb-2">Processed Video</h3>
-                <video
-                  controls
-                  className="w-full rounded-lg shadow-md"
-                  src={processedVideoUrl}
-                >
-                  Your browser does not support the video tag.
-                </video>
-              </div>
-            )}
-          </div>
+          )}
         </div>
+
+        {state.error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
+            {state.error}
+          </div>
+        )}
+
+        {state.isProcessing && (
+          <div className="mb-4">
+            <p className="text-gray-700">Processing video... {state.progress}%</p>
+            <div className="w-full bg-gray-200 rounded-full h-2.5">
+              <div
+                className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
+                style={{ width: `${state.progress}%` }}
+              ></div>
+            </div>
+          </div>
+        )}
+
+        {state.videoUrl && (
+          <div className="mt-8">
+            <h2 className="text-2xl font-bold mb-4">Processed Video</h2>
+            <video
+              ref={videoRef}
+              controls
+              className="w-full rounded-lg shadow-lg"
+              src={state.videoUrl}
+            >
+              Your browser does not support the video tag.
+            </video>
+          </div>
+        )}
       </div>
     </main>
   );
-} 
+}
+
+export default Home; 
