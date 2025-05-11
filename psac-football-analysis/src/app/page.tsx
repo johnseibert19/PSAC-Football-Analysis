@@ -198,7 +198,7 @@ const Home: NextPage = () => {
                     Processing video... {state.progress}%
                   </p>
                   <div className={`${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'} rounded-full h-2.5`}>
-                    <div
+                    <div 
                       className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
                       style={{ width: `${state.progress}%` }}
                     ></div>
@@ -210,9 +210,9 @@ const Home: NextPage = () => {
                 <div className="mt-4 w-full aspect-video">
                   <video
                     ref={videoRef}
+                    src={state.videoUrl}
                     controls
                     className="w-full h-full rounded-lg shadow-lg object-fit-contain"
-                    src={state.videoUrl}
                   >
                     Your browser does not support the video tag.
                   </video>
