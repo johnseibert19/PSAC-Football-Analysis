@@ -1,99 +1,95 @@
 // contact.tsx
 "use client";
 
-import React, { useState } from "react";
+import React from 'react';
+import { useRouter } from 'next/navigation';
 
-const Contact: React.FC = () => {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [message, setMessage] = useState("");
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    // logic here to send the contact information to the server
-    console.log("Submitting contact information:", { name, email, message });
-
-    /*
-    try {
-      const response = await fetch("/api/contact", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ name, email, message }),
-      });
-
-      if (response.ok) {
-        console.log("Contact information submitted successfully.");
-        // Optionally clear the form or show a success message
-      } else {
-        console.error("Failed to submit contact information.");
-        // Show an error message to the user
-      }
-    } catch (error) {
-      console.error("Error submitting contact information:", error);
-      // Show an error message to the user
-    }
-    */
-  };
+const ContactPage = () => {
+  const router = useRouter();
 
   return (
-    <div className="bg-gray-900 text-gray-100 min-h-screen flex flex-col items-center justify-center p-8">
-      <h1 className="text-3xl font-semibold mb-8">Contact Us</h1>
-
-      <form onSubmit={handleSubmit} className="w-full max-w-md">
-        <div className="mb-4">
-          <label htmlFor="name" className="block text-sm font-medium mb-2">
-            Name:
-          </label>
-          <input
-            type="text"
-            id="name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-700 rounded-md bg-gray-800 text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
-          />
-        </div>
-
-        <div className="mb-4">
-          <label htmlFor="email" className="block text-sm font-medium mb-2">
-            Email:
-          </label>
-          <input
-            type="email"
-            id="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-700 rounded-md bg-gray-800 text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
-          />
-        </div>
-
-        <div className="mb-6">
-          <label htmlFor="message" className="block text-sm font-medium mb-2">
-            Message:
-          </label>
-          <textarea
-            id="message"
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-700 rounded-md bg-gray-800 text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            rows={5}
-            required
-          />
-        </div>
-
-        <button
-          type="submit"
-          className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-md"
+    <main className="flex min-h-screen flex-col items-center justify-start bg-gray-900 text-white">
+      {/* Top Navigation Bar */}
+      <div className="bg-gray-800 w-full py-4 px-8 flex justify-between items-center">
+        <span 
+          className="font-bold text-xl cursor-pointer" 
+          onClick={() => router.push('/')}
         >
-          Submit
-        </button>
-      </form>
-    </div>
+          PSAC Football Analysis
+        </span>
+        <div>
+          <button className="text-sm text-gray-300 hover:text-white mr-4">Contact</button>
+          <button className="text-sm text-gray-300 hover:text-white">Light Mode</button>
+        </div>
+      </div>
+
+      <div className="max-w-4xl w-full py-16 px-8">
+        <h1 className="text-3xl font-bold mb-8 text-center">Contact Us</h1>
+        
+        <div className="bg-gray-800 rounded-lg shadow-md p-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div>
+              <h2 className="text-xl font-semibold mb-4">Get in Touch</h2>
+              <p className="text-gray-300 mb-6">
+                Have questions about our football analysis tool? We'd love to hear from you.
+                Fill out the form and we'll get back to you as soon as possible.
+              </p>
+              
+              <div className="space-y-4">
+                <div>
+                  <h3 className="font-semibold mb-2">Email</h3>
+                  <p className="text-gray-300">support@psacfootball.com</p>
+                </div>
+                <div>
+                  <h3 className="font-semibold mb-2">Location</h3>
+                  <p className="text-gray-300">Pennsylvania State Athletic Conference</p>
+                </div>
+              </div>
+            </div>
+
+            <form className="space-y-4">
+              <div>
+                <label htmlFor="name" className="block text-sm font-medium mb-2">Name</label>
+                <input
+                  type="text"
+                  id="name"
+                  className="w-full px-4 py-2 rounded bg-gray-700 border border-gray-600 focus:border-blue-500 focus:outline-none"
+                  placeholder="Your name"
+                />
+              </div>
+              
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium mb-2">Email</label>
+                <input
+                  type="email"
+                  id="email"
+                  className="w-full px-4 py-2 rounded bg-gray-700 border border-gray-600 focus:border-blue-500 focus:outline-none"
+                  placeholder="your.email@example.com"
+                />
+              </div>
+              
+              <div>
+                <label htmlFor="message" className="block text-sm font-medium mb-2">Message</label>
+                <textarea
+                  id="message"
+                  rows={4}
+                  className="w-full px-4 py-2 rounded bg-gray-700 border border-gray-600 focus:border-blue-500 focus:outline-none"
+                  placeholder="Your message"
+                ></textarea>
+              </div>
+              
+              <button
+                type="submit"
+                className="w-full px-6 py-3 bg-blue-700 text-white rounded-full hover:bg-blue-600 transition-colors"
+              >
+                Send Message
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </main>
   );
 };
 
-export default Contact;
+export default ContactPage;
