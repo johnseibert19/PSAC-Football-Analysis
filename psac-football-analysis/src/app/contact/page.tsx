@@ -3,7 +3,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Navbar from '../components/Navbar';
 
 const ContactPage = () => {
   const router = useRouter();
@@ -29,7 +28,29 @@ const ContactPage = () => {
 
   return (
     <main className={`flex min-h-screen flex-col items-center justify-start ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'}`}>
-      <Navbar isDarkMode={isDarkMode} toggleTheme={toggleTheme} />
+      {/* Top Navigation Bar */}
+      <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white shadow-md'} w-full py-4 px-8 flex justify-between items-center`}>
+        <span 
+          className="font-bold text-xl cursor-pointer" 
+          onClick={() => router.push('/')}
+        >
+          PSAC Football Analysis
+        </span>
+        <div>
+          <button 
+            onClick={() => router.push('/contact')}
+            className={`text-sm ${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'} mr-4`}
+          >
+            Contact
+          </button>
+          <button 
+            onClick={toggleTheme}
+            className={`text-sm ${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}
+          >
+            {isDarkMode ? 'Light Mode' : 'Dark Mode'}
+          </button>
+        </div>
+      </div>
 
       <div className="max-w-4xl w-full py-16 px-8">
         <h1 className="text-3xl font-bold mb-8 text-center">Contact Us</h1>

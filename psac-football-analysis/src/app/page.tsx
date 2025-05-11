@@ -3,7 +3,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { NextPage } from 'next';
 import { useRouter } from 'next/navigation';
-import Navbar from './components/Navbar';
 
 // API URL configuration
 const API_URL = process.env.NEXT_PUBLIC_FLASK_SERVER_URL || 'http://3.148.242.252:5000';
@@ -131,7 +130,24 @@ const Home: NextPage = () => {
 
   return (
     <main className={`flex min-h-screen flex-col items-center justify-start ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'}`}>
-      <Navbar isDarkMode={isDarkMode} toggleTheme={toggleTheme} />
+      {/* Top Navigation Bar */}
+      <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white shadow-md'} w-full py-4 px-8 flex justify-between items-center`}>
+        <span className="font-bold text-xl">PSAC Football Analysis</span>
+        <div>
+          <button 
+            onClick={() => router.push('/contact')}
+            className={`text-sm ${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'} mr-4`}
+          >
+            Contact
+          </button>
+          <button 
+            onClick={toggleTheme}
+            className={`text-sm ${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}
+          >
+            {isDarkMode ? 'Light Mode' : 'Dark Mode'}
+          </button>
+        </div>
+      </div>
 
       <div className="max-w-5xl w-full py-16 px-8">
         <h1 className="text-3xl font-bold mb-6 text-center">Football Video Analysis with YOLOv8</h1>
