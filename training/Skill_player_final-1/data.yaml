@@ -1,0 +1,19 @@
+names:
+- center
+- db
+- lb
+- qb
+- rb
+- s
+- skill
+- wr
+nc: 8
+roboflow:
+  license: CC BY 4.0
+  project: skill_player_final
+  url: https://universe.roboflow.com/capstone-q4dsk/skill_player_final/dataset/1
+  version: 1
+  workspace: capstone-q4dsk
+test: ../test/images
+train: ../train/images
+val: ../valid/images

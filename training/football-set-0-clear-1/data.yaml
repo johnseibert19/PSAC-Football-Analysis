@@ -1,0 +1,12 @@
+names:
+- football
+nc: 1
+roboflow:
+  license: CC BY 4.0
+  project: football-set-0-clear
+  url: https://universe.roboflow.com/capstone-q4dsk/football-set-0-clear/dataset/1
+  version: 1
+  workspace: capstone-q4dsk
+test: ../test/images
+train: ../train/images
+val: ../valid/images
